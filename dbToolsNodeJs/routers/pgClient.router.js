@@ -1,4 +1,4 @@
-const { pgConnection ,pgLoadTables} = require('../controllers/pgClient.controller');
+const { pgConnection ,pgLoadInfoTables, pgCreateProcedureInsert} = require('../controllers/pgClient.controller');
 const { Router } = require('express');
 
 const router = Router();
@@ -7,7 +7,11 @@ const router = Router();
 router.post('/connection', pgConnection);
 
 
-// http://localhost:3000/api/v1/pgServer/loadTables
-router.get('/loadTables', pgLoadTables);
+// http://localhost:3000/api/v1/pgServer/loadInfoTables
+router.get('/loadInfoTables', pgLoadInfoTables);
+
+// http://localhost:3000/api/v1/pgServer/createProcedureCreate
+router.post('/createProcedureCreate', pgCreateProcedureInsert);
+
 
 module.exports = router;

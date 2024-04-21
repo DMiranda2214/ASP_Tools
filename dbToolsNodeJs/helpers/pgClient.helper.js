@@ -2,7 +2,6 @@ const { Client } = require('pg');
 const { queryLoadTables, queryInfoProcedure, queryGetColumnData } = require('../db/db.queries');
 const DataModel = require('../models/data.model');
 const ColumnModel = require('../models/column.model');
-const ProcedureStatusModel = require('../models/procedure.status.model');
 
 class PgClientHelper {
     async pgDataConnection(username,password,database,urlServer,portServer){
@@ -32,7 +31,7 @@ class PgClientHelper {
         }
     }
 
-    async pgLoadTables(client){
+    async pgLoadInfoTables(client){
         try {
             let dataList = []
             await this.pgConnection(client);
@@ -42,15 +41,35 @@ class PgClientHelper {
                 const tableName = table.table_name;
                 dataModel.tablename = tableName;
                 dataModel.tableColumns = await this._GetColumns(client,tableName);
-                dataModel.procedure = await this._ValidateStatusProcedure(client,dataModel);
-                dataList.push(dataModel);
+                dataModel.procedureStatus = await this._ValidateStatusProcedure(client,dataModel);
+                dataList.push({
+                    tableName:dataModel.tablename,
+                    procedureStatus: dataModel.procedureStatus}
+                );
             }
+            console.log(dataList);
             return dataList;
         } catch (error) {
             console.error(error);
         }finally{
             await this.pgDisconnect(client);
         }
+    }
+
+    async pgCreateProcedureInsert(client,tableName){
+        try {
+            await this.pgConnection(client);
+            const getColumns = await this._GetColumns(client,tableName);
+            const getPrimaryKey = await this._getPrimaryKey(client,tableName);
+            const infoColumns = await this._buildClumnsInfo(getColumns);
+            
+        } catch (error) {
+            console.error(error);            
+        }
+        finally{
+            await this.pgDisconnect(client);
+        }
+
     }
 
     async _GetColumns(client,tableName){
@@ -68,27 +87,32 @@ class PgClientHelper {
         } catch (error) {
             console.error(error);
         }
+    }
+
+    async _getPrimaryKey(client,tableName){
+
+    }
+
+    async _buildClumnsInfo(columns){
 
     }
 
     async _ValidateStatusProcedure(client,dataModel){
         try {
-            let procedureList = []
-            const res = await this._InfoProcedure(client,dataModel.tablename)
+            const res = await this._InfoProcedure(client,dataModel.tablename);
+            if(res.rows < 1) return dataModel.procedureStatus;
+            let procedureList = [];
             for(const infoProcedure of res.rows){
                 const procedureName = infoProcedure.routine_name;
                 const procedureContent = infoProcedure.routine_definition;
                 const procedureState = await this._ValidateProcedure(dataModel,procedureName,procedureContent);
-                if(procedureState != undefined){
-                    procedureList.push(procedureState);
-                }
+                procedureList = procedureState;
             }
             return procedureList;
         } catch (error) {
             console.error(error);
         }
     }
-
 
     async _InfoProcedure(client,tableName){
         try {
@@ -100,45 +124,39 @@ class PgClientHelper {
     }
 
     async _ValidateProcedure(dataModel, procedureName, procedureContent){
-        let procedureStatusModel = new ProcedureStatusModel({});
         const nameParams = procedureName.split('_');
         if(nameParams.length >= 1){
             const procedureType=nameParams.at(-1);
             switch (procedureType) {
                 case 'crear':
-                    procedureStatusModel.name = 'crear';
-                    procedureStatusModel.state = await this._ParseColumns(dataModel,procedureContent);
+                    dataModel.procedureStatus[0].state = await this._ParseColumns(dataModel,procedureContent);
                     break;
                 case 'actualizar':
-                    procedureStatusModel.name = 'actualizar';
-                    procedureStatusModel.state = await this._ParseColumns(dataModel,procedureContent);
+                    dataModel.procedureStatus[1].state = await this._ParseColumns(dataModel,procedureContent);
                     break;
                 case 'eliminar':
-                    procedureStatusModel.name = 'eliminar';
-                    procedureStatusModel.state = await this._ParseColumns(dataModel,procedureContent);
+                    dataModel.procedureStatus[2].state = await this._ParseColumns(dataModel,procedureContent);
                     break;
                 case 'obtenerporid':
-                    procedureStatusModel.name = 'obtenerporid';
-                    procedureStatusModel.state = await this._ParseColumns(dataModel,procedureContent);
+                    dataModel.procedureStatus[3].state = await this._ParseColumns(dataModel,procedureContent);
                     break;
                 case 'obtener':
-                    procedureStatusModel.name = 'obtener';
-                    procedureStatusModel.state = await this._ParseColumns(dataModel,procedureContent);
+                    dataModel.procedureStatus[4].state = await this._ParseColumns(dataModel,procedureContent);
                     break;
                 default:
                     return;
             }
-            return procedureStatusModel;
+            return dataModel.procedureStatus;
         }
         else{
-            return "Tipo de procedimiento no encontrado";
+            return dataModel.procedureStatus;
         }
     }
 
     async _ParseColumns (dataModel, procedureContent) {
         let result = [];
         // Expresión regular para buscar comentarios que indiquen los nombres de los campos.
-        const fieldRegex = /\/\*CielToolCampo\s+(\w+)\s+CielToolCampo\*\//g;
+        const fieldRegex = /\/\*dbToolCampo\s+(\w+)\s+dbToolCampo\*\//g;
         // Busca todas las coincidencias de la expresión regular en el contenido del procedimiento.
         let match;
         while ((match = fieldRegex.exec(procedureContent)) !== null) {
@@ -146,17 +164,19 @@ class PgClientHelper {
         }
 
         if(dataModel.tableColumns.length > result.length){
+            console.log('1');
             return false;
         }
         if(dataModel.tableColumns.length < result.length){
+            console.log('2');
             return false;
         }
-        for(ColumnModel in dataModel.tableColumns ){
-            if (!result.includes(ColumnModel.name)) {
+        for(const data of dataModel.tableColumns){
+            if (!result.includes(data.name)) {
+                console.log('3');
                 return false;
             }
         }
-
         return true;
     }
 }

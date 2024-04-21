@@ -19,14 +19,25 @@ const pgConnection = async (req,res = response) => {
     }
 }
 
-const pgLoadTables = async(req,res = response) => {
+const pgLoadInfoTables = async(req,res = response) => {
     try {
         const {username,password,database,urlServer,portServer} = req.body;
         const client = await pgClientHelper.pgDataConnection(username,password,database,urlServer,portServer);
-        const tables = await pgClientHelper.pgLoadTables(client);
+        const tables = await pgClientHelper.pgLoadInfoTables(client);
         res.status(200).json(tables);
     } catch (error) {
         res.status(404).json({message:'Error al cargar las tablas'});
+    }
+}
+
+const pgCreateProcedureInsert = async(req,res = response) => {
+    try {
+        const {username,password,database,urlServer,portServer,tableName} = req.body;
+        const client = await pgClientHelper.pgDataConnection(username,password,database,urlServer,portServer);
+        const statusProcedure = await pgClientHelper.pgCreateProcedureInsert(client,tableName);
+        res.status(201).json({messag:'Procedimiento almacenado crear, creado con exito', spStatus: statusProcedure});
+    } catch (error) {
+        res.status(404).json({message:'Error al crear el procedimiento almacenado crear'});
     }
 }
 
@@ -34,5 +45,6 @@ const pgLoadTables = async(req,res = response) => {
 
 module.exports = {
     pgConnection,
-    pgLoadTables,
+    pgLoadInfoTables,
+    pgCreateProcedureInsert
 }
