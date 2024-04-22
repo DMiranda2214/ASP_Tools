@@ -35,7 +35,7 @@ const pgCreateProcedureInsert = async(req,res = response) => {
         const {username,password,database,urlServer,portServer,tableName} = req.body;
         const client = await pgClientHelper.pgDataConnection(username,password,database,urlServer,portServer);
         const statusProcedure = await pgClientHelper.pgCreateProcedureInsert(client,tableName);
-        res.status(201).json({messag:'Procedimiento almacenado crear, creado con exito', spStatus: statusProcedure});
+        res.status(201).json({message:'Procedimiento almacenado insertar, creado con exito'});
     } catch (error) {
         res.status(404).json({message:'Error al crear el procedimiento almacenado crear'});
     }
