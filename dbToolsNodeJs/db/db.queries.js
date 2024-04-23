@@ -127,6 +127,32 @@ function queryCreateGetAllProcedure(procedureName,tableName,primaryKey,getAllCol
     `;
 }
 
+function queryCreateGetXIdProcedure(procedureName,tableName,primaryKey,getAllColumns,infoColumns,getAllValues){
+    const now = new Date();
+    return `
+        CREATE OR REPLACE FUNCTION ${procedureName}(IDRegistro UUID)
+        RETURNS TABLE(${getAllValues}) AS \$\$
+        /*
+        * Author: dbTools
+        * Create date: ${now}
+        * Description: Procedimiento para la consulta de registros por ID
+        *              en la tabla ${tableName}
+        * ProcedureName: ${procedureName}
+        * dbToolsInfo:
+        
+        ${infoColumns}
+        */
+        BEGIN
+            RETURN QUERY
+            SELECT ${getAllColumns}
+            FROM ${tableName}
+            WHERE ${primaryKey} = IDRegistro;
+        END;
+        \$\$
+        LANGUAGE plpgsql;
+    `;
+}
+
 
 
 
@@ -139,4 +165,5 @@ module.exports = {
     queryCreateUpdateProcedure,
     queryCreateDeleteProcedure,
     queryCreateGetAllProcedure,
+    queryCreateGetXIdProcedure,
 }

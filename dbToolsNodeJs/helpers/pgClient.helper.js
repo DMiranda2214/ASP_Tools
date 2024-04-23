@@ -6,7 +6,8 @@ const { queryLoadTables,
         queryCreateInsertProcedure, 
         queryCreateUpdateProcedure, 
         queryCreateDeleteProcedure,
-        queryCreateGetAllProcedure, } = require('../db/db.queries');
+        queryCreateGetAllProcedure,
+        queryCreateGetXIdProcedure,} = require('../db/db.queries');
 const DataModel = require('../models/data.model');
 const ColumnModel = require('../models/column.model');
 
@@ -67,7 +68,7 @@ class PgClientHelper {
             await this.pgConnection(client);
             const getColumns = await this._getColumns(client,tableName);
             const getPrimaryKey = await this._getPrimaryKey(client,tableName);
-            const infoColumns = await this._buildClumnsInfo(getColumns);
+            const infoColumns = await this._buildColumnsInfo(getColumns);
             const textSpInsert = await this._buildStoreProcedureInsert(tableName,getPrimaryKey,getColumns,infoColumns);
             await client.query(textSpInsert);
             return;
@@ -84,7 +85,7 @@ class PgClientHelper {
             await this.pgConnection(client);
             const getColumns = await this._getColumns(client,tableName);
             const getPrimaryKey = await this._getPrimaryKey(client,tableName);
-            const infoColumns = await this._buildClumnsInfo(getColumns);
+            const infoColumns = await this._buildColumnsInfo(getColumns);
             const textSpUpdate = await this._buildStoreProcedureUpdate(tableName,getPrimaryKey,getColumns,infoColumns);
             await client.query(textSpUpdate);
             return;
@@ -102,7 +103,7 @@ class PgClientHelper {
             await this.pgConnection(client);
             const getColumns = await this._getColumns(client,tableName);
             const getPrimaryKey = await this._getPrimaryKey(client,tableName);
-            const infoColumns = await this._buildClumnsInfo(getColumns);
+            const infoColumns = await this._buildColumnsInfo(getColumns);
             const textSpDelete = await this._buildStoreProcedureDelete(tableName,getPrimaryKey,getColumns,infoColumns);
             await client.query(textSpDelete);
             return;
@@ -119,9 +120,26 @@ class PgClientHelper {
             await this.pgConnection(client);
             const getColumns = await this._getColumns(client,tableName);
             const getPrimaryKey = await this._getPrimaryKey(client,tableName);
-            const infoColumns = await this._buildClumnsInfo(getColumns);
+            const infoColumns = await this._buildColumnsInfo(getColumns);
             const textSpGetAll = await this._buildStoreProcedureGetAll(tableName,getPrimaryKey,getColumns,infoColumns);
             await client.query(textSpGetAll);
+            return;
+        } catch (error) {
+            console.error(error);
+        }
+        finally{
+            await this.pgDisconnect(client);
+        }
+    }
+
+    async pgCreateProcedureGetXId(client,tableName){
+        try {
+            await this.pgConnection(client);
+            const getColumns = await this._getColumns(client,tableName);
+            const getPrimaryKey = await this._getPrimaryKey(client,tableName);
+            const infoColumns = await this._buildColumnsInfo(getColumns);
+            const textSpGetXId = await this._buildStoreProcedureGetXId(tableName,getPrimaryKey,getColumns,infoColumns);
+            await client.query(textSpGetXId);
             return;
         } catch (error) {
             console.error(error);
@@ -168,7 +186,7 @@ class PgClientHelper {
 
     }
 
-    async _buildClumnsInfo(columns){
+    async _buildColumnsInfo(columns){
         let columnsInfo = '';
         for(const column of columns){
             columnsInfo += `/*dbToolCampo ${column.name} dbToolCampo*/ \n`;
@@ -219,7 +237,7 @@ class PgClientHelper {
                 case 'obtenertodos':
                     dataModel.procedureStatus[3].state = await this._ParseColumns(dataModel,procedureContent);
                     break;
-                case 'obtenerporid':
+                case 'obtenerxid':
                     dataModel.procedureStatus[4].state = await this._ParseColumns(dataModel,procedureContent);
                     break;
                 default:
@@ -298,6 +316,18 @@ class PgClientHelper {
             const getAllColumns = this._buildColumnsInsertProcedure(columns,false);
             const textSpGetAll = queryCreateGetAllProcedure(procedureName,tableName,primaryKey,getAllColumns,infoColumns,getAllValues);
             return textSpGetAll;
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async _buildStoreProcedureGetXId(tableName,primaryKey,columns,infoColumns){
+        try {
+            const procedureName = `${tableName}_ObtenerXId`;
+            const getAllValues = this._buildColumnsInsertProcedure(columns,true);
+            const getAllColumns = this._buildColumnsInsertProcedure(columns,false);
+            const textSpGetXId = queryCreateGetXIdProcedure(procedureName,tableName,primaryKey,getAllColumns,infoColumns,getAllValues);
+            return textSpGetXId;
         } catch (error) {
             console.error(error);
         }
