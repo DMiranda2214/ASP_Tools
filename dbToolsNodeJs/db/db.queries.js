@@ -53,6 +53,32 @@ function queryCreateInsertProcedure(procedureName,tableName,primaryKey,paramsCol
     `
 }
 
+function queryCreateUpdateProcedure(procedureName,tableName,primaryKey,paramColumns,infoColumns,updateColumns){
+    const primaryParam = `_${primaryKey}`;
+    const now = new Date();
+    return `
+        CREATE OR REPLACE FUNCTION ${procedureName}(${paramColumns})
+        RETURNS VOID AS \$\$
+        /*
+        * Author: dbTools
+        * Create date: ${now}
+        * Description: Procedimiento para la actualización de registros
+        *              en la tabla ${tableName}
+        * ProcedureName: ${procedureName}
+        * dbToolsInfo:
+        
+        ${infoColumns}
+        */
+        BEGIN
+            UPDATE ${tableName}
+            SET ${updateColumns}
+            WHERE ${primaryKey} = _${primaryKey};
+        END;
+        \$\$
+        LANGUAGE plpgsql;
+    `
+}
+
 
 module.exports = {
     queryLoadTables,
@@ -60,4 +86,5 @@ module.exports = {
     queryGetColumnData,
     queryGetPrimaryKey,
     queryCreateInsertProcedure,
+    queryCreateUpdateProcedure,
 }

@@ -1,5 +1,5 @@
 const { Client } = require('pg');
-const { queryLoadTables, queryInfoProcedure, queryGetColumnData, queryGetPrimaryKey, queryCreateInsertProcedure } = require('../db/db.queries');
+const { queryLoadTables, queryInfoProcedure, queryGetColumnData, queryGetPrimaryKey, queryCreateInsertProcedure, queryCreateUpdateProcedure } = require('../db/db.queries');
 const DataModel = require('../models/data.model');
 const ColumnModel = require('../models/column.model');
 
@@ -40,14 +40,13 @@ class PgClientHelper {
                 let dataModel = new DataModel({});
                 const tableName = table.table_name;
                 dataModel.tablename = tableName;
-                dataModel.tableColumns = await this._GetColumns(client,tableName);
+                dataModel.tableColumns = await this._getColumns(client,tableName);
                 dataModel.procedureStatus = await this._ValidateStatusProcedure(client,dataModel);
                 dataList.push({
                     tableName:dataModel.tablename,
                     procedureStatus: dataModel.procedureStatus}
                 );
             }
-            console.log(dataList);
             return dataList;
         } catch (error) {
             console.error(error);
@@ -59,10 +58,11 @@ class PgClientHelper {
     async pgCreateProcedureInsert(client,tableName){
         try {
             await this.pgConnection(client);
-            const getColumns = await this._GetColumns(client,tableName);
+            const getColumns = await this._getColumns(client,tableName);
             const getPrimaryKey = await this._getPrimaryKey(client,tableName);
             const infoColumns = await this._buildClumnsInfo(getColumns);
-            const spCreate = await this._buildStoreProcedureInsert(client,tableName,getPrimaryKey,getColumns,infoColumns);
+            const textSpInsert = await this._buildStoreProcedureInsert(client,tableName,getPrimaryKey,getColumns,infoColumns);
+            await client.query(textSpInsert);
             return;
         } catch (error) {
             console.error(error);            
@@ -70,10 +70,27 @@ class PgClientHelper {
         finally{
             await this.pgDisconnect(client);
         }
-
     }
 
-    async _GetColumns(client,tableName){
+    async pgCreateProcedureUpdate(client,tableName){
+        try {
+            await this.pgConnection(client);
+            const getColumns = await this._getColumns(client,tableName);
+            const getPrimaryKey = await this._getPrimaryKey(client,tableName);
+            const infoColumns = await this._buildClumnsInfo(getColumns);
+            const textSpUpdate = await this._buildStoreProcedureUpdate(client,tableName,getPrimaryKey,getColumns,infoColumns);
+            await client.query(textSpUpdate);
+            return;
+        }        
+        catch (error) {
+            console.error(error);
+        }
+        finally{
+            await this.pgDisconnect(client);
+        }
+    }
+
+    async _getColumns(client,tableName){
         try {
             let columnList = [];
             const res = await client.query(queryGetColumnData(tableName));
@@ -185,16 +202,13 @@ class PgClientHelper {
         }
 
         if(dataModel.tableColumns.length > result.length){
-            console.log('1');
             return false;
         }
         if(dataModel.tableColumns.length < result.length){
-            console.log('2');
             return false;
         }
         for(const data of dataModel.tableColumns){
             if (!result.includes(data.name)) {
-                console.log('3');
                 return false;
             }
         }
@@ -205,10 +219,22 @@ class PgClientHelper {
         try {
             const procedureName = `${tableName}_Crear`;
             const paramsColumns = this._buildParamsColumns(primaryKey,columns);
-            const selectColumns = this._buildColumnsInsertProcedure(columns,false);
+            const insertColumns = this._buildColumnsInsertProcedure(columns,false);
             const insertValues = this._getInsertValues(columns, primaryKey);
-            const res = await client.query(queryCreateInsertProcedure(procedureName,tableName,primaryKey,paramsColumns,infoColumns,selectColumns,insertValues));
-            return res;
+            const textSpInsert = queryCreateInsertProcedure(procedureName,tableName,primaryKey,paramsColumns,infoColumns,insertColumns,insertValues);
+            return textSpInsert;
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async _buildStoreProcedureUpdate(client,tableName,primaryKey,columns,infoColumns){
+        try {
+            const procedureName = `${tableName}_Actualizar`;
+            const paramColumns = this._buildParamsColumns(primaryKey,columns);
+            const updateColumns = this._buildColumnsUpdateProcedure(columns,primaryKey);
+            const textSpUpdate = queryCreateUpdateProcedure(procedureName,tableName,primaryKey,paramColumns,infoColumns,updateColumns);
+            return textSpUpdate;
         } catch (error) {
             console.error(error);
         }
@@ -299,6 +325,20 @@ class PgClientHelper {
           }
         }
         return result.join('');
+    }
+
+    _buildColumnsUpdateProcedure(columns, primaryKey){
+        let updateValues='';
+        for(const column of columns){
+            if(column.name !== primaryKey){
+                updateValues += `${column.name} = _${column.name}`;
+                if (column !== columns.at(-1)) {
+                    updateValues += ',';
+                }
+                updateValues += '\n';
+            }
+        }
+        return updateValues;
     }
 }
 
