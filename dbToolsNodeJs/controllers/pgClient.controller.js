@@ -1,7 +1,9 @@
 const { response } = require('express');
 const boom = require('@hapi/boom');
 const PgClientHelper = require('../helpers/pgClient.helper');
+const TokenHelper = require('../helpers/token.helper');
 const pgClientHelper = new PgClientHelper();
+const tokenHelper = new TokenHelper()
 
 const pgConnection = async (req,res = response) => {
     try {
@@ -10,7 +12,8 @@ const pgConnection = async (req,res = response) => {
         await pgClientHelper.pgConnection(client)
         if (client._connected) {
             await pgClientHelper.pgDisconnect(client);
-            res.status(200).json({message: 'Conexion establecida con exito'});
+            sessionToken = tokenHelper.generateToken(username,password,database,urlServer,portServer);
+            res.status(200).json({message: 'Conexion establecida con exito', sessionToken: sessionToken});
         } else {
             res.status(404).json({message:'Credenciales incorrectas'});
         }
