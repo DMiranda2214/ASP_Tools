@@ -67,6 +67,21 @@ const pgCreateProcedureDelete = async(req, res = response) => {
     }
 }
 
+const pgCreateProcedureGetAll = async(req, res = response) => {
+    try {
+        try {
+            const {username,password,database,urlServer,portServer,tableName} = req.body;
+            const client = await pgClientHelper.pgDataConnection(username,password,database,urlServer,portServer);
+            await pgClientHelper.pgCreateProcedureGetAll(client,tableName);
+            res.status(201).json({message:'Procedimiento almacenado obtener todos, creado con exito'});
+        } catch (error) {
+            res.status(404).json({message:'Error al crear el procedimiento almacenado obtener todos'});
+        }
+    } catch (error) {
+        
+    }
+}
+
 
 module.exports = {
     pgConnection,
@@ -74,4 +89,5 @@ module.exports = {
     pgCreateProcedureInsert,
     pgCreateProcedureUpdate,
     pgCreateProcedureDelete,
+    pgCreateProcedureGetAll,
 }

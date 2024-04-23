@@ -5,7 +5,8 @@ const { queryLoadTables,
         queryGetPrimaryKey, 
         queryCreateInsertProcedure, 
         queryCreateUpdateProcedure, 
-        queryCreateDeleteProcedure, } = require('../db/db.queries');
+        queryCreateDeleteProcedure,
+        queryCreateGetAllProcedure, } = require('../db/db.queries');
 const DataModel = require('../models/data.model');
 const ColumnModel = require('../models/column.model');
 
@@ -113,6 +114,23 @@ class PgClientHelper {
         }
     }
 
+    async pgCreateProcedureGetAll(client,tableName){
+        try {
+            await this.pgConnection(client);
+            const getColumns = await this._getColumns(client,tableName);
+            const getPrimaryKey = await this._getPrimaryKey(client,tableName);
+            const infoColumns = await this._buildClumnsInfo(getColumns);
+            const textSpGetAll = await this._buildStoreProcedureGetAll(tableName,getPrimaryKey,getColumns,infoColumns);
+            await client.query(textSpGetAll);
+            return;
+        } catch (error) {
+            console.error(error);
+        }
+        finally{
+            await this.pgDisconnect(client);
+        }
+    }
+
     async _getColumns(client,tableName){
         try {
             let columnList = [];
@@ -198,10 +216,10 @@ class PgClientHelper {
                 case 'eliminar':
                     dataModel.procedureStatus[2].state = await this._ParseColumns(dataModel,procedureContent);
                     break;
-                case 'obtenerporid':
+                case 'obtenertodos':
                     dataModel.procedureStatus[3].state = await this._ParseColumns(dataModel,procedureContent);
                     break;
-                case 'obtener':
+                case 'obtenerporid':
                     dataModel.procedureStatus[4].state = await this._ParseColumns(dataModel,procedureContent);
                     break;
                 default:
@@ -271,7 +289,18 @@ class PgClientHelper {
         } catch (error) {
             console.error(error);
         }
+    }
 
+    async _buildStoreProcedureGetAll(tableName,primaryKey,columns,infoColumns){
+        try {
+            const procedureName = `${tableName}_ObtenerTodos`
+            const getAllValues = this._buildColumnsInsertProcedure(columns,true);
+            const getAllColumns = this._buildColumnsInsertProcedure(columns,false);
+            const textSpGetAll = queryCreateGetAllProcedure(procedureName,tableName,primaryKey,getAllColumns,infoColumns,getAllValues);
+            return textSpGetAll;
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     _buildParamsColumns(primaryKey,columns){

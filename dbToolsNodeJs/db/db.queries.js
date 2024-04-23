@@ -101,6 +101,34 @@ function queryCreateDeleteProcedure(procedureName,tableName,primaryKey,columns,i
     `;
 }
 
+function queryCreateGetAllProcedure(procedureName,tableName,primaryKey,getAllColumns,infoColumns,getAllValues){
+    const now = new Date();
+    return `
+        CREATE OR REPLACE FUNCTION ${procedureName}()
+        RETURNS TABLE(${getAllValues}) AS \$\$
+        /*
+        * Author: dbTools
+        * Create date: ${now}
+        * Description: Procedimiento para la consulta de registros
+        *              en la tabla ${tableName}
+        * ProcedureName: ${procedureName}
+        * dbToolsInfo:
+        
+        ${infoColumns}
+        */
+        BEGIN
+            RETURN QUERY
+            SELECT ${getAllColumns}
+            FROM ${tableName}
+            ORDER BY ${primaryKey};
+        END;
+        \$\$
+        LANGUAGE plpgsql;
+    `;
+}
+
+
+
 
 module.exports = {
     queryLoadTables,
@@ -110,4 +138,5 @@ module.exports = {
     queryCreateInsertProcedure,
     queryCreateUpdateProcedure,
     queryCreateDeleteProcedure,
+    queryCreateGetAllProcedure,
 }
