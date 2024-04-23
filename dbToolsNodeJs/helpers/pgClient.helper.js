@@ -1,5 +1,11 @@
 const { Client } = require('pg');
-const { queryLoadTables, queryInfoProcedure, queryGetColumnData, queryGetPrimaryKey, queryCreateInsertProcedure, queryCreateUpdateProcedure } = require('../db/db.queries');
+const { queryLoadTables, 
+        queryInfoProcedure, 
+        queryGetColumnData, 
+        queryGetPrimaryKey, 
+        queryCreateInsertProcedure, 
+        queryCreateUpdateProcedure, 
+        queryCreateDeleteProcedure, } = require('../db/db.queries');
 const DataModel = require('../models/data.model');
 const ColumnModel = require('../models/column.model');
 
@@ -61,7 +67,7 @@ class PgClientHelper {
             const getColumns = await this._getColumns(client,tableName);
             const getPrimaryKey = await this._getPrimaryKey(client,tableName);
             const infoColumns = await this._buildClumnsInfo(getColumns);
-            const textSpInsert = await this._buildStoreProcedureInsert(client,tableName,getPrimaryKey,getColumns,infoColumns);
+            const textSpInsert = await this._buildStoreProcedureInsert(tableName,getPrimaryKey,getColumns,infoColumns);
             await client.query(textSpInsert);
             return;
         } catch (error) {
@@ -78,11 +84,28 @@ class PgClientHelper {
             const getColumns = await this._getColumns(client,tableName);
             const getPrimaryKey = await this._getPrimaryKey(client,tableName);
             const infoColumns = await this._buildClumnsInfo(getColumns);
-            const textSpUpdate = await this._buildStoreProcedureUpdate(client,tableName,getPrimaryKey,getColumns,infoColumns);
+            const textSpUpdate = await this._buildStoreProcedureUpdate(tableName,getPrimaryKey,getColumns,infoColumns);
             await client.query(textSpUpdate);
             return;
         }        
         catch (error) {
+            console.error(error);
+        }
+        finally{
+            await this.pgDisconnect(client);
+        }
+    }
+
+    async pgCreateProcedureDelete(client,tableName){
+        try {
+            await this.pgConnection(client);
+            const getColumns = await this._getColumns(client,tableName);
+            const getPrimaryKey = await this._getPrimaryKey(client,tableName);
+            const infoColumns = await this._buildClumnsInfo(getColumns);
+            const textSpDelete = await this._buildStoreProcedureDelete(tableName,getPrimaryKey,getColumns,infoColumns);
+            await client.query(textSpDelete);
+            return;
+        } catch (error) {
             console.error(error);
         }
         finally{
@@ -215,7 +238,7 @@ class PgClientHelper {
         return true;
     }
 
-    async _buildStoreProcedureInsert(client,tableName,primaryKey,columns,infoColumns){
+    async _buildStoreProcedureInsert(tableName,primaryKey,columns,infoColumns){
         try {
             const procedureName = `${tableName}_Crear`;
             const paramsColumns = this._buildParamsColumns(primaryKey,columns);
@@ -228,7 +251,7 @@ class PgClientHelper {
         }
     }
 
-    async _buildStoreProcedureUpdate(client,tableName,primaryKey,columns,infoColumns){
+    async _buildStoreProcedureUpdate(tableName,primaryKey,columns,infoColumns){
         try {
             const procedureName = `${tableName}_Actualizar`;
             const paramColumns = this._buildParamsColumns(primaryKey,columns);
@@ -238,6 +261,17 @@ class PgClientHelper {
         } catch (error) {
             console.error(error);
         }
+    }
+
+    async _buildStoreProcedureDelete(tableName,primaryKey,columns,infoColumns){
+        try {
+            const procedureName = `${tableName}_Eliminar`;
+            const textSpDelete = queryCreateDeleteProcedure(procedureName,tableName,primaryKey,columns,infoColumns);
+            return textSpDelete;
+        } catch (error) {
+            console.error(error);
+        }
+
     }
 
     _buildParamsColumns(primaryKey,columns){

@@ -48,7 +48,22 @@ const pgCreateProcedureUpdate = async(req,res = response) => {
         await pgClientHelper.pgCreateProcedureUpdate(client,tableName);
         res.status(201).json({message:'Procedimiento almacenado actualizar, creado con exito'});
     } catch (error) {
-        res.status(404).json({message:'Error al crear el procedimiento almacenado crear'});
+        res.status(404).json({message:'Error al crear el procedimiento almacenado actualizar'});
+    }
+}
+
+const pgCreateProcedureDelete = async(req, res = response) => {
+    try {
+        try {
+            const {username,password,database,urlServer,portServer,tableName} = req.body;
+            const client = await pgClientHelper.pgDataConnection(username,password,database,urlServer,portServer);
+            await pgClientHelper.pgCreateProcedureDelete(client,tableName);
+            res.status(201).json({message:'Procedimiento almacenado eliminar, creado con exito'});
+        } catch (error) {
+            res.status(404).json({message:'Error al crear el procedimiento almacenado eliminar'});
+        }
+    } catch (error) {
+        
     }
 }
 
@@ -58,4 +73,5 @@ module.exports = {
     pgLoadInfoTables,
     pgCreateProcedureInsert,
     pgCreateProcedureUpdate,
+    pgCreateProcedureDelete,
 }

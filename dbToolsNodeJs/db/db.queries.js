@@ -79,6 +79,28 @@ function queryCreateUpdateProcedure(procedureName,tableName,primaryKey,paramColu
     `
 }
 
+function queryCreateDeleteProcedure(procedureName,tableName,primaryKey,columns,infoColumns){
+    const now = new Date();
+    return `
+        CREATE OR REPLACE FUNCTION ${procedureName}(IDRegistro INT)
+        RETURNS VOID AS \$\$
+        /*
+        * Author: dbTools
+        * Create date: ${now}
+        * Description: Procedimiento para la eliminación de registros 
+        *              en la tabla ${tableName}
+        * ProcedureName: ${procedureName}
+        * dbToolsInfo:
+        
+        ${infoColumns}
+        */
+        BEGIN
+            DELETE FROM ${tableName} WHERE ${primaryKey} = IDRegistro;
+        END;
+        \$\$ LANGUAGE plpgsql;
+    `;
+}
+
 
 module.exports = {
     queryLoadTables,
@@ -87,4 +109,5 @@ module.exports = {
     queryGetPrimaryKey,
     queryCreateInsertProcedure,
     queryCreateUpdateProcedure,
+    queryCreateDeleteProcedure,
 }

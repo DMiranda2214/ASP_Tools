@@ -1,7 +1,8 @@
 const { pgConnection ,
         pgLoadInfoTables, 
         pgCreateProcedureInsert,
-        pgCreateProcedureUpdate, } = require('../controllers/pgClient.controller');
+        pgCreateProcedureUpdate, 
+        pgCreateProcedureDelete, } = require('../controllers/pgClient.controller');
 const { Router } = require('express');
 
 const router = Router();
@@ -19,6 +20,9 @@ router.post('/createProcedureInsert', pgCreateProcedureInsert);
 
 // http://localhost:3000/api/v1/pgServer/createProcedureUpdate
 router.post('/createProcedureUpdate', pgCreateProcedureUpdate);
+
+// http://localhost:3000/api/v1/pgServer/createProcedureDelete
+router.post('/createProcedureDelete', pgCreateProcedureDelete);
 
 
 module.exports = router;
