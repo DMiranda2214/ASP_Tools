@@ -24,7 +24,7 @@ const pgConnection = async (req,res = response) => {
 
 const pgLoadInfoTables = async(req,res = response) => {
     try {
-        const {username,password,database,urlServer,portServer} = req.body;
+        const {username,password,database,urlServer,portServer} = req.dataConnection;
         const client = await pgClientHelper.pgDataConnection(username,password,database,urlServer,portServer);
         const tables = await pgClientHelper.pgLoadInfoTables(client);
         res.status(200).json(tables);
@@ -35,7 +35,8 @@ const pgLoadInfoTables = async(req,res = response) => {
 
 const pgCreateProcedureInsert = async(req,res = response) => {
     try {
-        const {username,password,database,urlServer,portServer,tableName} = req.body;
+        const {username,password,database,urlServer,portServer} = req.dataConnection;
+        const {tableName} = req.body;
         const client = await pgClientHelper.pgDataConnection(username,password,database,urlServer,portServer);
         await pgClientHelper.pgCreateProcedureInsert(client,tableName);
         res.status(201).json({message:'Procedimiento almacenado insertar, creado con exito'});
@@ -46,7 +47,8 @@ const pgCreateProcedureInsert = async(req,res = response) => {
 
 const pgCreateProcedureUpdate = async(req,res = response) => {
     try {
-        const {username,password,database,urlServer,portServer,tableName} = req.body;
+        const {username,password,database,urlServer,portServer} = req.dataConnection;
+        const {tableName} = req.body;
         const client = await pgClientHelper.pgDataConnection(username,password,database,urlServer,portServer);
         await pgClientHelper.pgCreateProcedureUpdate(client,tableName);
         res.status(201).json({message:'Procedimiento almacenado actualizar, creado con exito'});
@@ -58,7 +60,8 @@ const pgCreateProcedureUpdate = async(req,res = response) => {
 const pgCreateProcedureDelete = async(req, res = response) => {
     try {
         try {
-            const {username,password,database,urlServer,portServer,tableName} = req.body;
+            const {username,password,database,urlServer,portServer} = req.dataConnection;
+            const {tableName} = req.body;
             const client = await pgClientHelper.pgDataConnection(username,password,database,urlServer,portServer);
             await pgClientHelper.pgCreateProcedureDelete(client,tableName);
             res.status(201).json({message:'Procedimiento almacenado eliminar, creado con exito'});
@@ -73,7 +76,8 @@ const pgCreateProcedureDelete = async(req, res = response) => {
 const pgCreateProcedureGetAll = async(req, res = response) => {
     try {
         try {
-            const {username,password,database,urlServer,portServer,tableName} = req.body;
+            const {username,password,database,urlServer,portServer} = req.dataConnection;
+            const {tableName} = req.body;
             const client = await pgClientHelper.pgDataConnection(username,password,database,urlServer,portServer);
             await pgClientHelper.pgCreateProcedureGetAll(client,tableName);
             res.status(201).json({message:'Procedimiento almacenado obtener todos, creado con exito'});
@@ -88,7 +92,8 @@ const pgCreateProcedureGetAll = async(req, res = response) => {
 const createProcedureGetXId = async(req, res = response) => {
     try {
         try {
-            const {username,password,database,urlServer,portServer,tableName} = req.body;
+            const {username,password,database,urlServer,portServer} = req.dataConnection;
+            const {tableName} = req.body;
             const client = await pgClientHelper.pgDataConnection(username,password,database,urlServer,portServer);
             await pgClientHelper.pgCreateProcedureGetXId(client,tableName);
             res.status(201).json({message:'Procedimiento almacenado obtener por ID, creado con exito'});

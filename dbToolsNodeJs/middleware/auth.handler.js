@@ -5,7 +5,8 @@ const { configJwt } = require('../config/config');
 function verifyToken(req,res,next){
     try {
         const sessionToken = req.headers.authorization.replace('Bearer','').trim();
-        jwt.verify(sessionToken,configJwt.jwtSecret);
+        const payload = jwt.verify(sessionToken,configJwt.jwtSecret);
+        req.dataConnection = payload;
         next();       
     } catch (error) {
         throw boom.unauthorized('Token invalido')
