@@ -6,7 +6,7 @@ const router = require('../routers/router');
 class serverModel {
     constructor(){
         this.app = express();
-        this.port = 3000;
+        this.port = 3080;
         this.routerPath = '/api/v1';
         this.middleares();
         this.routers();

@@ -12,13 +12,13 @@ const DataModel = require('../models/data.model');
 const ColumnModel = require('../models/column.model');
 
 class PgClientHelper {
-    async pgDataConnection(username,password,database,urlServer,portServer){
+    async pgDataConnection(server,port,dataBase,username,password){
         const client = new Client({
             user: username,
             password: password,
-            database: database,
-            host: urlServer,
-            port: portServer
+            database: dataBase,
+            host: server,
+            port: port
         });
         return client; 
     }

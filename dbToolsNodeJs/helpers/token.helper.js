@@ -4,13 +4,13 @@ const jwt = require('jsonwebtoken');
 
 class tokenHelper {
 
-    generateToken(username,password,database,urlServer,portServer){
+    generateToken(server,port,dataBase,username,password){
         const payload = {
             username,
             password,
-            database,
-            urlServer,
-            portServer
+            dataBase,
+            server,
+            port
         }
         const token = jwt.sign(payload,configJwt.jwtSecret);
         return token;
