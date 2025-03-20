@@ -189,7 +189,7 @@ class PgClientHelper {
     async _buildColumnsInfo(columns){
         let columnsInfo = '';
         for(const column of columns){
-            columnsInfo += `/*dbToolCampo ${column.name} dbToolCampo*/ \n`;
+            columnsInfo += `/*APSToolCampo ${column.name} ASPToolCampo*/ \n`;
         }
         return columnsInfo;
     }
@@ -253,7 +253,7 @@ class PgClientHelper {
     async _ParseColumns (dataModel, procedureContent) {
         let result = [];
         // Expresión regular para buscar comentarios que indiquen los nombres de los campos.
-        const fieldRegex = /\/\*dbToolCampo\s+(\w+)\s+dbToolCampo\*\//g;
+        const fieldRegex = /\/\*ASPToolCampo\s+(\w+)\s+ASPToolCampo\*\//g;
         // Busca todas las coincidencias de la expresión regular en el contenido del procedimiento.
         let match;
         while ((match = fieldRegex.exec(procedureContent)) !== null) {
