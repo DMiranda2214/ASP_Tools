@@ -32,12 +32,12 @@ function queryCreateInsertProcedure(procedureName,tableName,primaryKey,paramsCol
         CREATE OR REPLACE FUNCTION ${procedureName}(${paramsColumns})
         RETURNS uuid AS \$\$
         /*
-        * Author: dbTools
+        * Author: ASPTools
         * Create date: ${now}
         * Description: Procedimiento para la creación de registros 
         *              en la tabla ${tableName}
         * ProcedureName: ${procedureName}
-        * dbToolsInfo:
+        * ASPTools:
         ${infoColumns}
         */
         DECLARE
