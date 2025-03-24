@@ -24,7 +24,6 @@ const pgConnection = async (req,res = response) => {
             res.status(404).json({message:'Credenciales incorrectassss'});
         }
     } catch (error) {
-        console.log(error);
         res.status(404).json({message:'Credenciales incorrectas'});
     }
 }
@@ -32,7 +31,7 @@ const pgConnection = async (req,res = response) => {
 const pgLoadInfoTables = async(req,res = response) => {
     try {
         const {port,dataBase,username,server,password} = req.dataConnection;
-        const client = await pgClientHelper.pgDataConnection(port,dataBase,username,server,password);
+        const client = await pgClientHelper.pgDataConnection(server,port,dataBase,username,password);
         const tables = await pgClientHelper.pgLoadInfoTables(client);
         res.status(200).json(tables);
     } catch (error) {
@@ -40,11 +39,23 @@ const pgLoadInfoTables = async(req,res = response) => {
     }
 }
 
+const pgCreateAllProcedures = async(req,res = response) => {
+    try {
+        const {port,dataBase,username,server,password} = req.dataConnection;
+        const {tableName} = req.body;
+        const client = await pgClientHelper.pgDataConnection(server,port,dataBase,username,password);
+        await pgClientHelper.pgCreateAllProcedures(client,tableName);
+        res.status(201).json({message:'Procedimientos almacenados creados con exito'});
+    } catch (error) {
+        res.status(404).json({message:'Error al crear los procedimientos almacenados'});
+    }
+}
+
 const pgCreateProcedureInsert = async(req,res = response) => {
     try {
         const {port,dataBase,username,server,password} = req.dataConnection;
         const {tableName} = req.body;
-        const client = await pgClientHelper.pgDataConnection(port,dataBase,username,server,password);
+        const client = await pgClientHelper.pgDataConnection(server,port,dataBase,username,password);
         await pgClientHelper.pgCreateProcedureInsert(client,tableName);
         res.status(201).json({message:'Procedimiento almacenado insertar, creado con exito'});
     } catch (error) {
@@ -56,7 +67,7 @@ const pgCreateProcedureUpdate = async(req,res = response) => {
     try {
         const {port,dataBase,username,server,password} = req.dataConnection;
         const {tableName} = req.body;
-        const client = await pgClientHelper.pgDataConnection(port,dataBase,username,server,password);
+        const client = await pgClientHelper.pgDataConnection(server,port,dataBase,username,password);
         await pgClientHelper.pgCreateProcedureUpdate(client,tableName);
         res.status(201).json({message:'Procedimiento almacenado actualizar, creado con exito'});
     } catch (error) {
@@ -69,7 +80,7 @@ const pgCreateProcedureDelete = async(req, res = response) => {
         try {
             const {port,dataBase,username,server,password} = req.dataConnection;
             const {tableName} = req.body;
-            const client = await pgClientHelper.pgDataConnection(port,dataBase,username,server,password);
+            const client = await pgClientHelper.pgDataConnection(server,port,dataBase,username,password);
             await pgClientHelper.pgCreateProcedureDelete(client,tableName);
             res.status(201).json({message:'Procedimiento almacenado eliminar, creado con exito'});
         } catch (error) {
@@ -85,7 +96,7 @@ const pgCreateProcedureGetAll = async(req, res = response) => {
         try {
             const {port,dataBase,username,server,password} = req.dataConnection;
             const {tableName} = req.body;
-            const client = await pgClientHelper.pgDataConnection(port,dataBase,username,server,password);
+            const client = await pgClientHelper.pgDataConnection(server,port,dataBase,username,password);
             await pgClientHelper.pgCreateProcedureGetAll(client,tableName);
             res.status(201).json({message:'Procedimiento almacenado obtener todos, creado con exito'});
         } catch (error) {
@@ -101,7 +112,7 @@ const createProcedureGetXId = async(req, res = response) => {
         try {
             const {port,dataBase,username,server,password} = req.dataConnection;
             const {tableName} = req.body;
-            const client = await pgClientHelper.pgDataConnection(port,dataBase,username,server,password);
+            const client = await pgClientHelper.pgDataConnection(server,port,dataBase,username,password);
             await pgClientHelper.pgCreateProcedureGetXId(client,tableName);
             res.status(201).json({message:'Procedimiento almacenado obtener por ID, creado con exito'});
         } catch (error) {
@@ -116,6 +127,7 @@ const createProcedureGetXId = async(req, res = response) => {
 module.exports = {
     pgConnection,
     pgLoadInfoTables,
+    pgCreateAllProcedures,
     pgCreateProcedureInsert,
     pgCreateProcedureUpdate,
     pgCreateProcedureDelete,

@@ -10,7 +10,7 @@ class dataModel {
         this.procedureStatus = [
             {
                 name:'crear',
-                state:false
+                state: false
             },
             {
                 name:'actualizar',

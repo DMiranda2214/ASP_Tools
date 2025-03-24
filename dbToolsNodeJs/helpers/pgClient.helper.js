@@ -1,6 +1,7 @@
 const { Client } = require('pg');
 const { queryLoadTables, 
-        queryInfoProcedure, 
+        queryInfoProcedure,
+        queryValidateIfProcedureExist,
         queryGetColumnData, 
         queryGetPrimaryKey, 
         queryCreateInsertProcedure, 
@@ -17,8 +18,8 @@ class PgClientHelper {
             user: username,
             password: password,
             database: dataBase,
-            host: server,
-            port: port
+            port: port,
+            host: server
         });
         return client; 
     }
@@ -49,16 +50,41 @@ class PgClientHelper {
                 const tableName = table.table_name;
                 dataModel.tablename = tableName;
                 dataModel.tableColumns = await this._getColumns(client,tableName);
-                dataModel.procedureStatus = await this._ValidateStatusProcedure(client,dataModel);
+                dataModel.procedureStatus = await this._ValidateStatusProcedures(client,dataModel);
                 dataList.push({
                     tableName:dataModel.tablename,
                     procedureStatus: dataModel.procedureStatus}
                 );
-            }
+            }            
             return dataList;
         } catch (error) {
             console.error(error);
         }finally{
+            await this.pgDisconnect(client);
+        }
+    }
+
+    async pgCreateAllProcedures(client,tableName){
+        try {
+            await this.pgConnection(client);
+            const getColumns = await this._getColumns(client,tableName);
+            const getPrimaryKey = await this._getPrimaryKey(client,tableName);
+            const infoColumns = await this._buildColumnsInfo(getColumns);
+            const textSpInsert = await this._buildStoreProcedureInsert(tableName,getPrimaryKey,getColumns,infoColumns);
+            const textSpUpdate = await this._buildStoreProcedureUpdate(tableName,getPrimaryKey,getColumns,infoColumns);
+            const textSpDelete = await this._buildStoreProcedureDelete(tableName,getPrimaryKey,getColumns,infoColumns);
+            const textSpGetAll = await this._buildStoreProcedureGetAll(tableName,getPrimaryKey,getColumns,infoColumns);
+            const textSpGetXId = await this._buildStoreProcedureGetXId(tableName,getPrimaryKey,getColumns,infoColumns);
+            await client.query(textSpInsert);
+            await client.query(textSpUpdate);
+            await client.query(textSpDelete);
+            await client.query(textSpGetAll);
+            await client.query(textSpGetXId);        
+            return;
+        } catch (error) {
+            console.error(error);
+        }
+        finally{
             await this.pgDisconnect(client);
         }
     }
@@ -73,7 +99,7 @@ class PgClientHelper {
             await client.query(textSpInsert);
             return;
         } catch (error) {
-            console.error(error);            
+            console.error(error);
         }
         finally{
             await this.pgDisconnect(client);
@@ -89,7 +115,7 @@ class PgClientHelper {
             const textSpUpdate = await this._buildStoreProcedureUpdate(tableName,getPrimaryKey,getColumns,infoColumns);
             await client.query(textSpUpdate);
             return;
-        }        
+        }
         catch (error) {
             console.error(error);
         }
@@ -182,8 +208,6 @@ class PgClientHelper {
         } catch (error) {
             console.error(error);
         }
-
-
     }
 
     async _buildColumnsInfo(columns){
@@ -194,84 +218,47 @@ class PgClientHelper {
         return columnsInfo;
     }
 
-    async _ValidateStatusProcedure(client,dataModel){
+    async _ValidateStatusProcedures(client,dataModel){
         try {
-            const res = await this._InfoProcedure(client,dataModel.tablename);
-            if(res.rows < 1) return dataModel.procedureStatus;
-            let procedureList = [];
-            for(const infoProcedure of res.rows){
-                const procedureName = infoProcedure.routine_name;
-                const procedureContent = infoProcedure.routine_definition;
-                const procedureState = await this._ValidateProcedure(dataModel,procedureName,procedureContent);
-                procedureList = procedureState;
-            }
-            return procedureList;
+            dataModel.procedureStatus[0].state = await this._ValidateProcedureInsert(dataModel,client);
+            dataModel.procedureStatus[1].state = await this._ValidateProcedureUpdate(dataModel,client);
+            dataModel.procedureStatus[2].state = await this._ValidateProcedureDelete(dataModel,client);
+            dataModel.procedureStatus[3].state = await this._ValidateProcedureGetAll(dataModel,client);
+            dataModel.procedureStatus[4].state = await this._ValidateProcedureGetXId(dataModel,client);
+            return dataModel.procedureStatus;
         } catch (error) {
             console.error(error);
         }
     }
 
-    async _InfoProcedure(client,tableName){
-        try {
-            const res = await client.query(queryInfoProcedure(tableName));
-            return res;    
-        } catch (error) {
-            console.error(error);
-        }
+    async _ValidateProcedureInsert(dataModel,client){
+        const procedureName = `${dataModel.tablename}_Crear`;
+        const res = await client.query(queryValidateIfProcedureExist(procedureName.toLocaleLowerCase()));        
+        return res.rows[0].exists;
     }
 
-    async _ValidateProcedure(dataModel, procedureName, procedureContent){
-        const nameParams = procedureName.split('_');
-        if(nameParams.length >= 1){
-            const procedureType=nameParams.at(-1);
-            switch (procedureType) {
-                case 'crear':
-                    dataModel.procedureStatus[0].state = await this._ParseColumns(dataModel,procedureContent);
-                    break;
-                case 'actualizar':
-                    dataModel.procedureStatus[1].state = await this._ParseColumns(dataModel,procedureContent);
-                    break;
-                case 'eliminar':
-                    dataModel.procedureStatus[2].state = await this._ParseColumns(dataModel,procedureContent);
-                    break;
-                case 'obtenertodos':
-                    dataModel.procedureStatus[3].state = await this._ParseColumns(dataModel,procedureContent);
-                    break;
-                case 'obtenerxid':
-                    dataModel.procedureStatus[4].state = await this._ParseColumns(dataModel,procedureContent);
-                    break;
-                default:
-                    return;
-            }
-            return dataModel.procedureStatus;
-        }
-        else{
-            return dataModel.procedureStatus;
-        }
+    async _ValidateProcedureUpdate(dataModel,client){
+        const procedureName = `${dataModel.tablename}_Actualizar`;
+        const res = await   client.query(queryValidateIfProcedureExist(procedureName.toLocaleLowerCase()));
+        return res.rows[0].exists;
     }
 
-    async _ParseColumns (dataModel, procedureContent) {
-        let result = [];
-        // Expresión regular para buscar comentarios que indiquen los nombres de los campos.
-        const fieldRegex = /\/\*ASPToolCampo\s+(\w+)\s+ASPToolCampo\*\//g;
-        // Busca todas las coincidencias de la expresión regular en el contenido del procedimiento.
-        let match;
-        while ((match = fieldRegex.exec(procedureContent)) !== null) {
-            result.push(match[1]);
-        }
+    async _ValidateProcedureDelete(dataModel,client){
+        const procedureName = `${dataModel.tablename}_Eliminar`;
+        const res = await client.query(queryValidateIfProcedureExist(procedureName.toLocaleLowerCase()));
+        return res.rows[0].exists;
+    }
 
-        if(dataModel.tableColumns.length > result.length){
-            return false;
-        }
-        if(dataModel.tableColumns.length < result.length){
-            return false;
-        }
-        for(const data of dataModel.tableColumns){
-            if (!result.includes(data.name)) {
-                return false;
-            }
-        }
-        return true;
+    async _ValidateProcedureGetAll(dataModel,client){
+        const procedureName = `${dataModel.tablename}_ObtenerTodos`;
+        const res = await client.query(queryValidateIfProcedureExist(procedureName.toLocaleLowerCase()));
+        return res.rows[0].exists;
+    }
+
+    async _ValidateProcedureGetXId(dataModel,client){
+        const procedureName = `${dataModel.tablename}_ObtenerXId`;
+        const res = await client.query(queryValidateIfProcedureExist(procedureName.toLocaleLowerCase()));
+        return res.rows[0].exists; 
     }
 
     async _buildStoreProcedureInsert(tableName,primaryKey,columns,infoColumns){

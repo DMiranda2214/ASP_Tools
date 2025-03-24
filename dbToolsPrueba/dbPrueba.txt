@@ -10,32 +10,3 @@ CREATE TABLE tipo_usuario(
     tipo_usuario VARCHAR(25),
     PRIMARY KEY(codigo)
 )
-
-
-
-CREATE OR REPLACE FUNCTION public.usuario_actualizar(
-	_codigo integer,
-	_nombre character varying,
-	_contrasena character varying)
-    RETURNS void
-AS $$
-/*
- * Author: dbTools
- * Create date: 2024-03-08 14:53:24.459964
- * Description: Procedimiento para la actualización de registros
- *              en la tabla usuario
- * ProcedureName: usuario_Actualizar
- * dbToolsInfo:
-
-/*dbToolCampo codigo dbToolCampo*/ 
-/*dbToolCampo usuario dbToolCampo*/ 
-/*dbToolCampo contrasena dbToolCampo*/
- */
-BEGIN
-    UPDATE usuario
-    SET codigo = _codigo,
-	usuario = _usuario,
-	contrasena = _contrasena
-    WHERE codigo = _codigo;
-END;
-$$ LANGUAGE plpgsql;

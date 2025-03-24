@@ -7,6 +7,15 @@ function queryInfoProcedure( tableName ){
 
 }
 
+function queryValidateIfProcedureExist(procedureName){
+    return `SELECT EXISTS (
+                SELECT 1 
+                FROM information_schema.routines 
+                WHERE routine_schema = 'public'
+                AND routine_name = '${procedureName}'
+            ) AS exists;`;
+}
+
 function queryGetColumnData(tableName){
     return `SELECT COLUMN_NAME,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH 
             FROM INFORMATION_SCHEMA.COLUMNS WHERE 
@@ -72,7 +81,7 @@ function queryCreateUpdateProcedure(procedureName,tableName,primaryKey,paramColu
         BEGIN
             UPDATE ${tableName}
             SET ${updateColumns}
-            WHERE ${primaryKey} = _${primaryKey};
+            WHERE ${primaryKey} = ${primaryParam};
         END;
         \$\$
         LANGUAGE plpgsql;
@@ -159,6 +168,7 @@ function queryCreateGetXIdProcedure(procedureName,tableName,primaryKey,getAllCol
 module.exports = {
     queryLoadTables,
     queryInfoProcedure,
+    queryValidateIfProcedureExist,
     queryGetColumnData,
     queryGetPrimaryKey,
     queryCreateInsertProcedure,
