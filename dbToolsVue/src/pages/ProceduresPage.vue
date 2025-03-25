@@ -107,6 +107,7 @@
 <script setup>
   import { ref, onMounted } from "vue";
   import { useRouter } from "vue-router";
+  import Swal from 'sweetalert2'
   const router = useRouter();
 
   const procedures = ref([]);
@@ -163,9 +164,9 @@
             }}
           );
           if (!response.ok) {
-            throw new Error("Error generando procedimiento");
+            throw new Error("Error generando el procedimiento");
           }
-          await stateProcedure();
+          await successAlert();
         break;
         case 'obtenerid':
           response = await fetch(
@@ -173,9 +174,9 @@
             data
           );
           if (!response.ok) {
-            throw new Error("Error generando procedimiento");
+            throw new Error("Error generando el procedimiento");
           }
-          await stateProcedure();
+          await successAlert();
         break;
         case 'crear':
           response = await fetch(
@@ -183,9 +184,9 @@
             data
           );
           if (!response.ok) {
-            throw new Error("Error generando procedimiento");
+            throw new Error("Error generando el procedimiento");
           }
-          await stateProcedure();
+          await successAlert();
         break;
         case 'actualizar':
           response = await fetch(
@@ -193,9 +194,9 @@
             data
           );
           if (!response.ok) {
-            throw new Error("Error generando procedimiento");
+            throw new Error("Error generando el procedimiento");
           }
-          await stateProcedure();
+          await successAlert();
         break;
         case 'eliminar':
           response = await fetch(
@@ -203,13 +204,13 @@
             data
           );
           if (!response.ok) {
-            throw new Error("Error generando procedimiento");
+            throw new Error("Error generando el procedimiento");
           }
-          await stateProcedure();
+          await successAlert();
         break;
       }
     } catch (error) {
-      console.error("Error generando procedimiento:", error);
+      errorAlert(error)
     }
   };
 
@@ -229,16 +230,41 @@
       if (!response.ok) {
         throw new Error("Error generando procedimientos");
       }
-      await stateProcedure();
+      await successAlert();
     } catch (error) {
-      console.error("Error generando procedimientos:", error);
+      errorAlert(error)
     }
   };
 
   const logout = () => {
     sessionStorage.clear()
-    router.push('/');
-  };
+    Swal.fire({
+        icon: 'success',
+        text: 'Conexion finalizada',
+        timer: 1500,
+        showConfirmButton: false
+    }).then(() => {
+        router.push('/')
+    })
+  }
+
+  const successAlert = async () => {
+      Swal.fire({
+          icon: 'success',
+          text: 'Procedimiento generado exitosamente',
+          timer: 1500,
+          showConfirmButton: false
+      })
+      await stateProcedure();
+  }
+
+  const errorAlert = (error) => {
+      Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: error
+      })
+  }
 
   onMounted(async() => {   
     try {

@@ -21,7 +21,7 @@ const pgConnection = async (req,res = response) => {
             sessionToken = tokenHelper.generateToken(server,port,dataBase,username,password);
             res.json({message: 'Conexion establecida con exito', sessionToken: sessionToken});
         } else {
-            res.status(404).json({message:'Credenciales incorrectassss'});
+            res.status(404).json({message:'Credenciales incorrectas'});
         }
     } catch (error) {
         res.status(404).json({message:'Credenciales incorrectas'});
@@ -71,7 +71,7 @@ const pgCreateProcedureUpdate = async(req,res = response) => {
         await pgClientHelper.pgCreateProcedureUpdate(client,tableName);
         res.status(201).json({message:'Procedimiento almacenado actualizar, creado con exito'});
     } catch (error) {
-        res.status(404).json({message:'Error al crear el procedimiento almacenado actualizar'});
+        res.status(404).json({message: error.message});
     }
 }
 

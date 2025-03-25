@@ -117,7 +117,7 @@ class PgClientHelper {
             return;
         }
         catch (error) {
-            console.error(error);
+            throw new Error(error.message);
         }
         finally{
             await this.pgDisconnect(client);
@@ -282,6 +282,7 @@ class PgClientHelper {
             const textSpUpdate = queryCreateUpdateProcedure(procedureName,tableName,primaryKey,paramColumns,infoColumns,updateColumns);
             return textSpUpdate;
         } catch (error) {
+            
             console.error(error);
         }
     }

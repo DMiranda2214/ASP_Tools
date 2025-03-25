@@ -71,12 +71,13 @@
 </template>
 <script setup>
     import { ref } from 'vue'
-    import { useRouter } from 'vue-router'	
+    import { useRouter } from 'vue-router'
+    import Swal from 'sweetalert2'
     const router = useRouter()
     const loading = ref(false)
     const authForm = ref({
         server: 'localhost',
-        port: '5432',
+        port: '',
         username: 'postgres',
         password: '1234567890',
         dataBase: 'Prueba'
@@ -97,12 +98,32 @@
                 throw new Error(data.message || 'Error durante la autenticación')
             }
             sessionStorage.setItem('sessionToken', JSON.stringify(data.sessionToken))
-            router.push("/Procedures")
+            successAlert()
         } catch (error) {
-            console.error(error)
+            errorAlert(error.message)
         } finally {
             loading.value = false
         }
+    }
+
+    const successAlert = () => {
+        Swal.fire({
+            icon: 'success',
+            title: 'Bienvenido',
+            text: 'Autenticación exitosa',
+            showConfirmButton: false,
+            timer: 1500
+        }).then(() => {
+            router.push('/Procedures')
+        })
+    }
+
+    const errorAlert = (error) => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error
+        })
     }
 </script>
 

@@ -8,11 +8,11 @@ class serverModel {
         this.app = express();
         this.port = 3080;
         this.routerPath = '/api/v1';
-        this.middleares();
+        this.middlewares();
         this.routers();
     }
 
-    middleares(){
+    middlewares(){
         this.app.use(cors());
         this.app.use(express.json());
     }
