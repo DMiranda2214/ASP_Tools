@@ -26,13 +26,9 @@
       <v-table class="mt-6">
         <thead>
           <tr>
-            <th class="text-left">Nombre</th>
-            <th class="text-center">Obtener</th>
-            <th class="text-center">Obtener x ID</th>
-            <th class="text-center">Insertar</th>
-            <th class="text-center">Actualizar</th>
-            <th class="text-center">Eliminar</th>
-            <th class="text-center">Generar Todos</th>
+            <th class="text-left"><strong>Nombre</strong></th>
+            <th class="text-center" colspan="5"><strong>Procedimientos Almacenados</strong></th>
+            <th class="text-center"><strong>Generar Todos</strong></th>
           </tr>
         </thead>
         <tbody>
@@ -45,7 +41,7 @@
                 :disabled="getProcedureState(procedure, 'obtenertodos')"
                 @click="generateProcedure(procedure.tableName, 'obtenertodos')"
               >
-                Obtener
+                GET
               </v-btn>
             </td>
             <td class="text-center">
@@ -55,7 +51,7 @@
                 :disabled="getProcedureState(procedure, 'obtenerid')"
                 @click="generateProcedure(procedure.tableName, 'obtenerid')"
               >
-                Obtener x ID
+                GET BY ID
               </v-btn>
             </td>
             <td class="text-center">
@@ -65,7 +61,7 @@
                 :disabled="getProcedureState(procedure, 'crear')"
                 @click="generateProcedure(procedure.tableName, 'crear')"
               >
-                Insertar
+                CREATE
               </v-btn>
             </td>
             <td class="text-center">
@@ -75,7 +71,7 @@
                 :disabled="getProcedureState(procedure, 'actualizar')"
                 @click="generateProcedure(procedure.tableName, 'actualizar')"
               >
-                Actualizar
+                UPDATE
               </v-btn>
             </td>
             <td class="text-center">
@@ -85,7 +81,7 @@
                 :disabled="getProcedureState(procedure, 'eliminar')"
                 @click="generateProcedure(procedure.tableName, 'eliminar')"
               >
-                Eliminar
+                DELETE
               </v-btn>
             </td>
             <td class="text-center">
@@ -95,7 +91,7 @@
                 :disabled="allProceduresState(procedure)"
                 @click="generateAllProcedures(procedure.tableName)"
               >
-                Generar Todos
+                GENERATE ALL
               </v-btn>
             </td>
           </tr>
@@ -287,7 +283,7 @@
 
   .content-container {
     width: 80%;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: auto;
     padding: 20px;
   }

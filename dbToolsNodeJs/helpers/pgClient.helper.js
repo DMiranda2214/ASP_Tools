@@ -68,13 +68,13 @@ class PgClientHelper {
         try {
             await this.pgConnection(client);
             const getColumns = await this._getColumns(client,tableName);
-            const getPrimaryKey = await this._getPrimaryKey(client,tableName);
+            const { primaryKeyColumn , primaryKeyType } = await this._getPrimaryKey(client,tableName);
             const infoColumns = await this._buildColumnsInfo(getColumns);
-            const textSpInsert = await this._buildStoreProcedureInsert(tableName,getPrimaryKey,getColumns,infoColumns);
-            const textSpUpdate = await this._buildStoreProcedureUpdate(tableName,getPrimaryKey,getColumns,infoColumns);
-            const textSpDelete = await this._buildStoreProcedureDelete(tableName,getPrimaryKey,getColumns,infoColumns);
-            const textSpGetAll = await this._buildStoreProcedureGetAll(tableName,getPrimaryKey,getColumns,infoColumns);
-            const textSpGetXId = await this._buildStoreProcedureGetXId(tableName,getPrimaryKey,getColumns,infoColumns);
+            const textSpInsert = await this._buildStoreProcedureInsert(tableName,primaryKeyColumn,primaryKeyType,getColumns,infoColumns);
+            const textSpUpdate = await this._buildStoreProcedureUpdate(tableName,primaryKeyColumn,getColumns,infoColumns);
+            const textSpDelete = await this._buildStoreProcedureDelete(tableName,primaryKeyColumn,primaryKeyType,infoColumns);
+            const textSpGetAll = await this._buildStoreProcedureGetAll(tableName,primaryKeyColumn,getColumns,infoColumns);
+            const textSpGetXId = await this._buildStoreProcedureGetXId(tableName,primaryKeyColumn,primaryKeyType,getColumns,infoColumns);
             await client.query(textSpInsert);
             await client.query(textSpUpdate);
             await client.query(textSpDelete);
@@ -93,9 +93,9 @@ class PgClientHelper {
         try {
             await this.pgConnection(client);
             const getColumns = await this._getColumns(client,tableName);
-            const getPrimaryKey = await this._getPrimaryKey(client,tableName);
+            const { primaryKeyColumn , primaryKeyType } = await this._getPrimaryKey(client,tableName);
             const infoColumns = await this._buildColumnsInfo(getColumns);
-            const textSpInsert = await this._buildStoreProcedureInsert(tableName,getPrimaryKey,getColumns,infoColumns);
+            const textSpInsert = await this._buildStoreProcedureInsert(tableName,primaryKeyColumn,primaryKeyType,getColumns,infoColumns);
             await client.query(textSpInsert);
             return;
         } catch (error) {
@@ -110,9 +110,9 @@ class PgClientHelper {
         try {
             await this.pgConnection(client);
             const getColumns = await this._getColumns(client,tableName);
-            const getPrimaryKey = await this._getPrimaryKey(client,tableName);
+            const { primaryKeyColumn } = await this._getPrimaryKey(client,tableName);
             const infoColumns = await this._buildColumnsInfo(getColumns);
-            const textSpUpdate = await this._buildStoreProcedureUpdate(tableName,getPrimaryKey,getColumns,infoColumns);
+            const textSpUpdate = await this._buildStoreProcedureUpdate(tableName,primaryKeyColumn,getColumns,infoColumns);
             await client.query(textSpUpdate);
             return;
         }
@@ -127,10 +127,10 @@ class PgClientHelper {
     async pgCreateProcedureDelete(client,tableName){
         try {
             await this.pgConnection(client);
+            const { primaryKeyColumn, primaryKeyType } = await this._getPrimaryKey(client,tableName);
             const getColumns = await this._getColumns(client,tableName);
-            const getPrimaryKey = await this._getPrimaryKey(client,tableName);
             const infoColumns = await this._buildColumnsInfo(getColumns);
-            const textSpDelete = await this._buildStoreProcedureDelete(tableName,getPrimaryKey,getColumns,infoColumns);
+            const textSpDelete = await this._buildStoreProcedureDelete(tableName,primaryKeyColumn,primaryKeyType,infoColumns);
             await client.query(textSpDelete);
             return;
         } catch (error) {
@@ -145,9 +145,9 @@ class PgClientHelper {
         try {
             await this.pgConnection(client);
             const getColumns = await this._getColumns(client,tableName);
-            const getPrimaryKey = await this._getPrimaryKey(client,tableName);
+            const { primaryKeyColumn} = await this._getPrimaryKey(client,tableName);
             const infoColumns = await this._buildColumnsInfo(getColumns);
-            const textSpGetAll = await this._buildStoreProcedureGetAll(tableName,getPrimaryKey,getColumns,infoColumns);
+            const textSpGetAll = await this._buildStoreProcedureGetAll(tableName,primaryKeyColumn,getColumns,infoColumns);
             await client.query(textSpGetAll);
             return;
         } catch (error) {
@@ -162,9 +162,9 @@ class PgClientHelper {
         try {
             await this.pgConnection(client);
             const getColumns = await this._getColumns(client,tableName);
-            const getPrimaryKey = await this._getPrimaryKey(client,tableName);
+            const { primaryKeyColumn, primaryKeyType } = await this._getPrimaryKey(client,tableName);
             const infoColumns = await this._buildColumnsInfo(getColumns);
-            const textSpGetXId = await this._buildStoreProcedureGetXId(tableName,getPrimaryKey,getColumns,infoColumns);
+            const textSpGetXId = await this._buildStoreProcedureGetXId(tableName,primaryKeyColumn,primaryKeyType,getColumns,infoColumns);
             await client.query(textSpGetXId);
             return;
         } catch (error) {
@@ -197,8 +197,9 @@ class PgClientHelper {
             const res = await client.query(queryGetPrimaryKey(tableName));
             if (res.rows.length > 0) {
                 const primaryKeyColumn = res.rows[0].column_name;
+                const primaryKeyType = res.rows[0].data_type
                 if (primaryKeyColumn && primaryKeyColumn !== '') {
-                    return primaryKeyColumn;
+                    return { primaryKeyColumn, primaryKeyType };
                 } else {
                     throw new Error(`No se encontro el nombre de la llave primaria en la tabla ${tableName}`);
                 }
@@ -261,13 +262,13 @@ class PgClientHelper {
         return res.rows[0].exists; 
     }
 
-    async _buildStoreProcedureInsert(tableName,primaryKey,columns,infoColumns){
+    async _buildStoreProcedureInsert(tableName,primaryKeyColumn,primaryKeyType,getColumns,infoColumns){
         try {
             const procedureName = `${tableName}_Crear`;
-            const paramsColumns = this._buildParamsColumns(primaryKey,columns);
-            const insertColumns = this._buildColumnsInsertProcedure(columns,false);
-            const insertValues = this._getInsertValues(columns, primaryKey);
-            const textSpInsert = queryCreateInsertProcedure(procedureName,tableName,primaryKey,paramsColumns,infoColumns,insertColumns,insertValues);
+            const paramsColumns = this._buildParamsColumns(primaryKeyColumn,getColumns);
+            const insertColumns = this._buildColumnsInsertProcedure(getColumns,false);
+            const insertValues = this._getInsertValues(getColumns, primaryKeyColumn);
+            const textSpInsert = queryCreateInsertProcedure(procedureName,tableName,primaryKeyColumn,primaryKeyType,paramsColumns,infoColumns,insertColumns,insertValues);
             return textSpInsert;
         } catch (error) {
             console.error(error);
@@ -282,15 +283,14 @@ class PgClientHelper {
             const textSpUpdate = queryCreateUpdateProcedure(procedureName,tableName,primaryKey,paramColumns,infoColumns,updateColumns);
             return textSpUpdate;
         } catch (error) {
-            
             console.error(error);
         }
     }
 
-    async _buildStoreProcedureDelete(tableName,primaryKey,columns,infoColumns){
+    async _buildStoreProcedureDelete(tableName,primaryKey,primaryKeyType,infoColumns){
         try {
             const procedureName = `${tableName}_Eliminar`;
-            const textSpDelete = queryCreateDeleteProcedure(procedureName,tableName,primaryKey,columns,infoColumns);
+            const textSpDelete = queryCreateDeleteProcedure(procedureName,tableName,primaryKey,primaryKeyType,infoColumns);
             return textSpDelete;
         } catch (error) {
             console.error(error);
@@ -309,12 +309,12 @@ class PgClientHelper {
         }
     }
 
-    async _buildStoreProcedureGetXId(tableName,primaryKey,columns,infoColumns){
+    async _buildStoreProcedureGetXId(tableName,primaryKey, primaryKeyType,columns,infoColumns){
         try {
             const procedureName = `${tableName}_ObtenerXId`;
             const getAllValues = this._buildColumnsInsertProcedure(columns,true);
             const getAllColumns = this._buildColumnsInsertProcedure(columns,false);
-            const textSpGetXId = queryCreateGetXIdProcedure(procedureName,tableName,primaryKey,getAllColumns,infoColumns,getAllValues);
+            const textSpGetXId = queryCreateGetXIdProcedure(procedureName,tableName,primaryKey,primaryKeyType,getAllColumns,infoColumns,getAllValues);
             return textSpGetXId;
         } catch (error) {
             console.error(error);

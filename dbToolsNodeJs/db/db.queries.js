@@ -24,22 +24,29 @@ function queryGetColumnData(tableName){
 }
 
 function queryGetPrimaryKey(tableName){
-     return `SELECT kcu.column_name
+     return `SELECT 
+                kcu.column_name, 
+                c.data_type
             FROM information_schema.table_constraints tc
             LEFT JOIN information_schema.key_column_usage kcu 
-            ON tc.constraint_catalog = kcu.constraint_catalog 
-            AND tc.constraint_schema = kcu.constraint_schema 
-            AND tc.constraint_name = kcu.constraint_name
-            WHERE lower(tc.constraint_type)= 'primary key' AND tc.table_name = '${tableName}';`
+                ON tc.constraint_catalog = kcu.constraint_catalog 
+                AND tc.constraint_schema = kcu.constraint_schema 
+                AND tc.constraint_name = kcu.constraint_name
+            LEFT JOIN information_schema.columns c
+                ON kcu.table_schema = c.table_schema 
+                AND kcu.table_name = c.table_name 
+                AND kcu.column_name = c.column_name
+            WHERE lower(tc.constraint_type) = 'primary key' 
+                AND tc.table_name ='${tableName}';`
 }
 
-function queryCreateInsertProcedure(procedureName,tableName,primaryKey,paramsColumns,infoColumns,selectColumns,insertValues){
+function queryCreateInsertProcedure(procedureName,tableName,primaryKey,primaryKeyType,paramsColumns,infoColumns,selectColumns,insertValues){
     const primaryParam = `_${primaryKey}`;
     const now = new Date();
 
     return `
         CREATE OR REPLACE FUNCTION ${procedureName}(${paramsColumns})
-        RETURNS uuid AS \$\$
+        RETURNS ${primaryKeyType} AS \$\$
         /*
         * Author: ASPTools
         * Create date: ${now}
@@ -50,7 +57,7 @@ function queryCreateInsertProcedure(procedureName,tableName,primaryKey,paramsCol
         ${infoColumns}
         */
         DECLARE
-        ${primaryParam} integer;
+        ${primaryParam} ${primaryKeyType};
         BEGIN
             INSERT INTO ${tableName}(${selectColumns})
             VALUES (${insertValues})
@@ -88,10 +95,10 @@ function queryCreateUpdateProcedure(procedureName,tableName,primaryKey,paramColu
     `
 }
 
-function queryCreateDeleteProcedure(procedureName,tableName,primaryKey,columns,infoColumns){
+function queryCreateDeleteProcedure(procedureName,tableName,primaryKey,primaryKeyType,infoColumns){
     const now = new Date();
     return `
-        CREATE OR REPLACE FUNCTION ${procedureName}(IDRegistro INT)
+        CREATE OR REPLACE FUNCTION ${procedureName}(_${primaryKey} ${primaryKeyType})
         RETURNS VOID AS \$\$
         /*
         * Author: dbTools
@@ -104,7 +111,7 @@ function queryCreateDeleteProcedure(procedureName,tableName,primaryKey,columns,i
         ${infoColumns}
         */
         BEGIN
-            DELETE FROM ${tableName} WHERE ${primaryKey} = IDRegistro;
+            DELETE FROM ${tableName} WHERE ${primaryKey} = _${primaryKey};
         END;
         \$\$ LANGUAGE plpgsql;
     `;
@@ -136,10 +143,10 @@ function queryCreateGetAllProcedure(procedureName,tableName,primaryKey,getAllCol
     `;
 }
 
-function queryCreateGetXIdProcedure(procedureName,tableName,primaryKey,getAllColumns,infoColumns,getAllValues){
+function queryCreateGetXIdProcedure(procedureName,tableName,primaryKey,primaryKeyType,getAllColumns,infoColumns,getAllValues){
     const now = new Date();
     return `
-        CREATE OR REPLACE FUNCTION ${procedureName}(IDRegistro UUID)
+        CREATE OR REPLACE FUNCTION ${procedureName}(asp_${primaryKey} ${primaryKeyType})
         RETURNS TABLE(${getAllValues}) AS \$\$
         /*
         * Author: dbTools
@@ -155,7 +162,7 @@ function queryCreateGetXIdProcedure(procedureName,tableName,primaryKey,getAllCol
             RETURN QUERY
             SELECT ${getAllColumns}
             FROM ${tableName}
-            WHERE ${primaryKey} = IDRegistro;
+            WHERE ${primaryKey} = asp_${primaryKey};
         END;
         \$\$
         LANGUAGE plpgsql;
